@@ -1,0 +1,11 @@
+{% extends "template.html" %}
+{% load static %}
+
+{% block content %}
+<div class="col-lg-6 about-text">
+	<h5>Уважаемый, <b>{{name}}</b>!</h5>
+	<p>{{ message }}<br>Спасибо!</p>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="{% static 'js/jqueryCapcha.js' %}"></script>
+{% endblock %}

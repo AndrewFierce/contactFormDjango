@@ -1,0 +1,28 @@
+{% extends "template.html" %}
+{% load static %}
+	{% block content %}
+
+	<form class="comment-form --contact" action="{% url 'index' %}" id="form" method="POST">
+		<div class="row">
+			{% csrf_token %}
+			<div class="col-lg-4">
+				{{ form.your_name }}
+			</div>
+			<div class="col-lg-4">
+				{{ form.sender }}
+			</div>
+			<div class="col-lg-4">
+				{{ form.subject }}
+			</div>
+			<div class="col-lg-12">
+				{{ form.message }}
+				<div class="col-sm-2">
+					{{ form.captcha }}
+				</div>
+				<div class="text-center">
+					<button class="site-btn">SUBMIT</button>
+				</div>
+			</div>
+		</div>
+	</form>
+{% endblock %}
