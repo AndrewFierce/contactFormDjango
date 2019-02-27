@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 from .models import Subscribers
 from .forms import NameForm
 
+# функция отображения формы
 def index(request):
 	# если получены данные методом POST
 	if request.method == 'POST':
@@ -49,13 +50,18 @@ def index(request):
 		form = NameForm()
 	return render(request, 'name.html', {'form': form})
 
+# функция подтверждения почтового ящика
 def confirmation(request, email = None, random = None):
+	# пытаемся получить e-mail пользователя с ключом
 	try:
 		subscribers = Subscribers.objects.get(email=email, randomkey=random)
+	# если пользователь не был найдем, возвращаем его на страницу отказа подтверждения
 	except Subscribers.DoesNotExist:
 		return render(request, 'confirmation.html', context={'email':'Почтовый ящик '+email+' не был подтвержден. Пожалуйста, не меняйте адрес ссылки!'},)
+	# если ключ или пользователь не соответствуют действительность, например, злоумышленник пытается подобрать ключи
 	if str(subscribers.email) != str(email) or str(subscribers.randomkey) != str(random):
 		return render(request, 'confirmation.html', context={'email':'Почтовый ящик '+email+' не был подтвержден. Пожалуйста, не меняйте адрес ссылки!'},)
+	# если ссылка соответствует действительность, то подтверждаем почтовый ящик в базе и отправляем пользователя на страницу подтверждения
 	else:
 		subscriber = Subscribers.objects.filter(email=email,)
 		for subscribe in subscriber:
