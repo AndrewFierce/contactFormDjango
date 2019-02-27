@@ -6,35 +6,45 @@ from .models import Subscribers
 from .forms import NameForm
 
 def index(request):
-	# if this is a POST request we need to process the form data
+	# если получены данные методом POST
 	if request.method == 'POST':
+		# Получаем переменные полей с формы обратной связи
 		email = request.POST.get('sender', '')
 		your_name = request.POST.get('your_name', '')
 		subject = request.POST.get('subject', '')
 		description = request.POST.get('message', '')
 		subscribeEmail = ""
 		toEmail = "your@email.com"
-		# create a form instance and populate it with data from the request:
+		# создаем экземпляр формы и заполняем его данными из запроса:
 		form = NameForm(request.POST)
-		# check whether it's valid:
+		# Проверяем заполненность формы:
 		if form.is_valid():
+			# Ищем подписчиков из базы данных Subscribers и проверяем подтверждение
 			for validEmail in Subscribers.objects.values('email', 'confirmation').filter(email=email,):
 				subscribeEmail = validEmail['email']
 				confirmation = validEmail['confirmation']
+			# Если пользователь впервые запрашивает обратную связь
 			if subscribeEmail == "":
+				# формируем ключ
 				random = get_random_string(length=10)
+				# создаем нового неподтвержденного пользователя в БД
 				subscribers = Subscribers.objects.create(email=email, randomkey = random)
+				# сохраняем
 				subscribers.save()
-				# send_mail('Confirmation', 'Hello!\nDear, '+your_name+'.\n For confirm your e-mail, follow the link below.:\n'+request.build_absolute_uri('') + 'confirmation/' + email + '/' + random, None, [email], fail_silently=False)
-				print(request.build_absolute_uri('') + 'confirmation/' + email + '/' + random)
-				# send_mail(subject+' no confirmation', 'User ' + your_name + ' send you next message:\n\n'+description, None, [email], fail_silently=False)
+				# формируем ссылку для подтверждения почтового ящика и отправляем ее пользователю на почту
+				send_mail('Confirmation', 'Hello!\nDear, '+your_name+'.\n For confirm your e-mail, follow the link below.:\n'+request.build_absolute_uri('') + 'confirmation/' + email + '/' + random, None, [email], fail_silently=False)
+				# отправляем нам сообщение с добавлением к теме 'no confirmation', чтобы в будущем отсеивать неподтвержденные ящики
+				send_mail(subject+' no confirmation', 'User ' + your_name + ' send you next message:\n\n'+description, None, [email], fail_silently=False)
+				# перенаправляем на страницу, где указываем пользователю на необходимость подтверждения почтового ящика, чтобы доказать, что он не спамер
 				return render(request, 'success.html', context={'name':your_name, 'message':'Пройдите, пожалуйста, по ссылке, отправленной Вам в сообщении, чтобы доказать, что Вы реальный пользователь.'},)
+			# если пользователь ранее подтверждал свой почтовый ящик, то просто отправляем сообщение в чистом виде и перенаправляем его на страницу с благодарностью
 			elif subscribeEmail != "" and confirmation == True:
-				# send_mail(subject, your_name + " send you next message:\n\n" + description, None, [toEmail], fail_silently=False)
+				send_mail(subject, your_name + " send you next message:\n\n" + description, None, [toEmail], fail_silently=False)
 				return render(request, 'success.html', context={'name':your_name, 'message':'Спасибо за Ваше обращение! Мы ответим на Ваше сообщение в ближайшее время!'},)
+			# если почтовый адрес не подтвержден, то сообщаем о необходимости его подтвердить
 			elif subscribeEmail != "" and confirmation != True:
 				return render(request, 'success.html', context={'name':your_name, 'message':'Пройдите, пожалуйста, по ссылке, отправленной Вам в сообщении ранее, чтобы доказать, что Вы реальный пользователь.'},)
-	# if a GET (or any other method) we'll create a blank form
+	# если метод GET (или любой другой метод) мы создадим пустую форму
 	else:
 		form = NameForm()
 	return render(request, 'name.html', {'form': form})
